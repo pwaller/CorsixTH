@@ -868,6 +868,7 @@ local fps_history = {} -- Used to average FPS over the last thirty frames
 for i = 1, 30 do fps_history[i] = 0 end
 local fps_sum = 0 -- Sum of fps_history array
 local fps_next = 1 -- Used to loop through fps_history when [over]writing
+local frame_n = 0
 
 function App:drawFrame()
   self.video:startFrame()
@@ -878,7 +879,8 @@ function App:drawFrame()
     self.key_modifiers = SDL.getKeyModifiers()
     self.ui:draw(self.video)
   end
-  self.video:endFrame()
+  print("endFrame " .. frame_n, " ", self.video:endFrame())
+  frame_n = frame_n + 1
 
   if self.config.track_fps then
     fps_sum = fps_sum - fps_history[fps_next]

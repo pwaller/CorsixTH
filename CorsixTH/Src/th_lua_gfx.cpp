@@ -636,9 +636,13 @@ static int l_surface_end_frame(lua_State *L)
     THRenderTarget* pCanvas = luaT_testuserdata<THRenderTarget>(L);
     lua_settop(L, 1);
     if(pCanvas->endFrame())
+    {
+        printf("l_surface_end_frame return 1;\n");
         return 1;
+    }
     lua_pushnil(L);
     lua_pushstring(L, pCanvas->getLastError());
+    printf("l_surface_end_frame return 2;\n");
     return 2;
 }
 
