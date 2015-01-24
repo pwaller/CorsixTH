@@ -396,11 +396,13 @@ bool THRenderTarget::fillRect(uint32_t iColour, int iX, int iY, int iW, int iH)
 
 void THRenderTarget::getClipRect(THClipRect* pRect) const
 {
+    return;
     SDL_RenderGetClipRect(m_pRenderer, reinterpret_cast<SDL_Rect*>(pRect));
 }
 
 void THRenderTarget::setClipRect(const THClipRect* pRect)
 {
+    return;
     const SDL_Rect *pSDLRect = reinterpret_cast<const SDL_Rect*>(pRect);
 
     // For some reason, SDL treats an empty rect (h or w <= 0) as if you turned
