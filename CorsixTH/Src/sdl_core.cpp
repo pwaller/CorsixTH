@@ -136,10 +136,16 @@ static int l_get_key_modifiers(lua_State *L)
     return 1;
 }
 
+void *addr_mainloop = 0;
+lua_State *mainloop_co = NULL;
+// size_t location_
+
 static int l_mainloop(lua_State *L)
 {
+    
     luaL_checktype(L, 1, LUA_TTHREAD);
     lua_State *dispatcher = lua_tothread(L, 1);
+    mainloop_co = dispatcher;
 
     fps_ctrl *fps_control = (fps_ctrl*)lua_touserdata(L, lua_upvalueindex(1));
     SDL_TimerID timer = SDL_AddTimer(30, timer_frame_callback, NULL);

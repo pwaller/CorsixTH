@@ -792,7 +792,7 @@ function App:run()
       -- returned from mainloop(), meaning that where == "callback".
       self.last_dispatch_type = where
     end
-    print("An error has occured!")
+    print("An error has occured!", e)
     print("Almost anything can be the cause, but the detailed information "..
     "below can help the developers find the source of the error.")
     print("Running: The " .. self.last_dispatch_type .. " handler.")
@@ -869,11 +869,17 @@ for i = 1, 30 do fps_history[i] = 0 end
 local fps_sum = 0 -- Sum of fps_history array
 local fps_next = 1 -- Used to loop through fps_history when [over]writing
 
+function App:foo()
+  -- print(debug.traceback())
+  self.moviePlayer:refresh()
+end
+
 function App:drawFrame()
   self.video:startFrame()
   if(self.moviePlayer.playing) then
     self.key_modifiers = {}
-    self.moviePlayer:refresh()
+    self:foo()
+    -- self.moviePlayer:refresh()
   else
     self.key_modifiers = SDL.getKeyModifiers()
     self.ui:draw(self.video)

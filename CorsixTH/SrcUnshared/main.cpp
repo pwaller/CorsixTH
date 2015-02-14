@@ -37,6 +37,88 @@ struct types_equal<T1, T1>{ enum{
     result = 1,
 }; };
 
+#include <stdio.h>
+#include <unistd.h>
+#include <signal.h>
+#include <syscall.h>
+#include <execinfo.h>
+#define UNW_LOCAL_ONLY
+#include <libunwind.h>
+
+lua_State *globL;
+
+
+extern lua_State *mainloop_co;
+int main(int argc, char** argv);
+
+void show_backtrace() {
+    unw_cursor_t c; unw_context_t uc;
+    unw_word_t ip;
+    unw_proc_info_t pi;
+
+    int frames = 0;
+
+    char cbuf[10240] = {0};
+    char *bufstart = cbuf;
+
+    char *argv[1024] = {"addr2line", "-Cfe", "CorsixTH/CorsixTH", NULL};
+    int nArg = 3;
+
+    unw_getcontext(&uc);
+    unw_init_local(&c, &uc);
+    while (unw_step(&c) > 0) {
+        unw_get_proc_info(&c, &pi);
+
+        unw_get_reg(&c, UNW_REG_IP, &ip);
+
+        if (frames++ <= 2) continue; //skip first two
+
+        static char buf[1024];
+        unw_get_proc_name(&c, buf, sizeof(buf)/sizeof(buf[0]), NULL);
+        if (buf[0] == '_' && buf[1] == 'i' && buf[2] == 'n' && buf[3] == 'i') {
+            // Skip over the lua _init function
+            continue;
+        }
+
+        printf("%s(%p) <- ", buf, reinterpret_cast<void*>(ip));
+
+        int n = sprintf(bufstart, "%p", ip);
+        bufstart[n+1] = 0;
+        argv[nArg++] = bufstart;
+        argv[nArg+1] = NULL;
+        bufstart += n+1;
+
+        // if (buf[0] == 'm' && buf[1] == 'a' && buf[2] == 'i' && buf[3] == 'n') {
+        if (pi.start_ip == reinterpret_cast<unw_word_t>(&main)) {
+            printf("program start\n");
+            break;
+        }
+    }
+
+    lua_State *L = mainloop_co;
+    luaL_loadstring(L, "print(debug.traceback(\"\", 2))");
+    lua_call(L, 0, 0);
+    L = globL;
+    luaL_loadstring(L, "print(debug.traceback(\"\", 2))");
+    lua_call(L, 0, 0);
+
+    printf("\n");
+
+    execve("/usr/bin/addr2line", argv, NULL);
+    fprintf(stderr, "addr2line failed. Run sudo apt-get install binutils\n");
+    fflush(stderr);
+
+    _exit(1);
+}
+
+
+void handler(int, siginfo_t *, void *) {
+    const char buf[] = {"\n! SEGFAULT !\n\n"};
+    write(1, buf, sizeof(buf)/sizeof(buf[0]));
+    show_backtrace();
+    _exit(1);
+}
+
 //! Program entry point
 /*!
     Prepares a Lua state for, and catches errors from, CorsixTH_lua_main(). By
@@ -58,17 +140,29 @@ int main(int argc, char** argv)
 
     bool bRun = true;
 
+
+    struct sigaction a;
+
+    sigemptyset (&a.sa_mask);
+    a.sa_flags = SA_ONSTACK | SA_SIGINFO;
+    a.sa_sigaction = handler;
+
+    sigaction(SIGSEGV, &a, NULL);
+    printf("SIGSEGV handler configured\n");
+
     while(bRun)
     {
         lua_State *L = NULL;
 
         L = luaL_newstate();
+        globL = L;
         if(L == NULL)
         {
             fprintf(stderr, "Fatal error starting CorsixTH: "
                 "Cannot open Lua state.\n");
             return 0;
         }
+
         lua_atpanic(L, CorsixTH_lua_panic);
         luaL_openlibs(L);
         lua_settop(L, 0);
@@ -84,6 +178,32 @@ int main(int argc, char** argv)
 
         if(lua_pcall(L, argc, 0, 1) != 0)
         {
+
+            CorsixTH_lua_stacktrace(L);
+
+            // int level = 0;
+            // lua_Debug ar;
+            // // GCfunc *fn;
+            // while (lua_getstack(L, level++, &ar)) {
+            //     lua_getinfo(L, "Snlf", &ar);
+            //     printf("Level %d\n", level);
+            //     // fn = funcV(L->top - level);
+            //     if (ar.currentline > 0)
+            //         printf("line %d", ar.currentline);
+            //     if (*ar.namewhat) {
+            //         printf(" in function %s ", ar.name);
+            //     } else {
+            //         if (*ar.what == 'm') {
+            //             printf(" in main chunk");
+            //         } else if (*ar.what == 'C') {
+            //             printf(" at %p", NULL);
+            //         } else {
+            //             printf(" in function <%s:%d>", ar.short_src, ar.linedefined);
+            //         }
+            //     }
+            //     printf("\n");
+            // }
+
             const char* err = lua_tostring(L, -1);
             if(err != NULL)
             {

@@ -108,7 +108,7 @@ ENDIF(SDL_FOUND)
 # Find Lua
 FIND_PACKAGE(Lua REQUIRED)
 IF(Lua_FOUND)
-  TARGET_LINK_LIBRARIES(CorsixTH ${LUA_LIBRARY})
+  TARGET_LINK_LIBRARIES(CorsixTH ${LUA_LIBRARY} unwind)
   INCLUDE_DIRECTORIES(${LUA_INCLUDE_DIR})
   # Special link flags needed on OSX/64bit, according to: http://luajit.org/install.html
   # If these are not specified, luaL_newstate() returns NULL and we get this:

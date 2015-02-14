@@ -132,7 +132,9 @@ function UIPatient:draw(canvas, x_, y_)
   -- the rendering point needs adjustment to keep the rendered region entirely
   -- within the map (this situation doesn't occur very often, but we need to
   -- handle it properly when it does occur).
+  print(px, py, 75, 76, x + 17, y + 216, "--", self.visible_diamond.x, self.visible_diamond.y)
   px, py = self.ui.limitPointToDiamond(px, py, self.visible_diamond, true)
+  print("ltd:", px, py)
   self.ui.app.map:draw(canvas, px, py, 75, 76, x + 17, y + 216)
   Window.draw(self, canvas, x_, y_)
 

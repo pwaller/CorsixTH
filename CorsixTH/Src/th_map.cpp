@@ -889,6 +889,10 @@ void THMap::draw(THRenderTarget* pCanvas, int iScreenX, int iScreenY,
                 pItem = (THDrawable*)(formerIterator->m_pNext);
                 while(pItem)
                 {
+                    if (pItem == (void*)0xffffffffffffffff) {
+                        fprintf(stderr, "BUG!\n");
+                        break;
+                    }
                     if(pItem->getDrawingLayer() == 8)
                         pItem->m_fnDraw(pItem, pCanvas, formerIterator.x(), formerIterator.y());
                     pItem = (THDrawable*)(pItem->m_pNext);

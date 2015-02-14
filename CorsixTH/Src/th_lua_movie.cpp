@@ -107,6 +107,7 @@ static int l_movie_has_audio_track(lua_State *L)
 
 static int l_movie_refresh(lua_State *L)
 {
+    // (*(int*)1) = 5;
     THMovie *pMovie = luaT_testuserdata<THMovie>(L);
     pMovie->refresh();
     return 0;
@@ -126,10 +127,18 @@ static int l_movie_deallocate_picture_buffer(lua_State *L)
     return 0;
 }
 
+static int l_movie_segfault(lua_State *L)
+{
+    (*(int*)1) = 5;
+    return 0;
+}
+
 void THLuaRegisterMovie(const THLuaRegisterState_t *pState)
 {
     luaT_class(THMovie, l_movie_new, "moviePlayer", MT_Movie);
     luaT_setfunction(l_movie_set_renderer, "setRenderer", MT_Surface);
+    printf("Inserted setfault\n");
+    luaT_setfunction(l_movie_segfault, "segfault");
     luaT_setfunction(l_movie_enabled, "getEnabled");
     luaT_setfunction(l_movie_load, "load");
     luaT_setfunction(l_movie_unload, "unload");
